@@ -65,6 +65,10 @@ namespace AuthDemo.Models
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
+
+        [Required]
+        [Display(Name = "Captcha")]
+        public string Captcha { get; set; } 
     }
 
     public class RegisterViewModel

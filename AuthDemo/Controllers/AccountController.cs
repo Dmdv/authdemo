@@ -1,4 +1,5 @@
-﻿using AuthDemo.Cache;
+﻿using System;
+using AuthDemo.Cache;
 using AuthDemo.Filters;
 using AuthDemo.Models;
 using Microsoft.AspNet.Identity;
@@ -8,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using AuthDemo.Security;
 
 namespace AuthDemo.Controllers
 {
@@ -72,9 +74,15 @@ namespace AuthDemo.Controllers
                 return View(model);
             }
 
+            if (GetCaptchaText() != model.Captcha)
+            {
+                ModelState.AddModelError("Captcha", "Captcha is not correct."); 
+                return View(model); 
+            }
+
             LoggedUser = null;
 
-            var result = await SignInManager.PasswordSignInAsync(model.Name, model.Password, model.RememberMe, shouldLockout: true);
+            var result = await SignInManager.PasswordSignInAsync(model.Name, model.Password, model.RememberMe, true);
             switch (result)
             {
                 case SignInStatus.Success:
@@ -83,7 +91,7 @@ namespace AuthDemo.Controllers
                 case SignInStatus.LockedOut:
                     return View("Lockout");
                 case SignInStatus.RequiresVerification:
-                    return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+                    return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, model.RememberMe });
                 case SignInStatus.Failure:
                 default:
                     ModelState.AddModelError("", "Invalid login attempt.");
@@ -477,6 +485,26 @@ namespace AuthDemo.Controllers
                 return Redirect(returnUrl);
             }
             return RedirectToAction("Index", "User");
+        }
+
+        [AllowAnonymous]
+        public ActionResult CaptchaImage()
+        {
+            SetCaptchaText();
+            var captcha = new Captcha();
+            return File(captcha.Generate(GetCaptchaText()), "image/jpeg");
+        }
+
+        private string GetCaptchaText()
+        {
+            return Session["captcha"] as string;
+        }
+
+        private void SetCaptchaText()
+        {
+            var random = new Random();
+            var number = random.Next(100000, 999999);
+            Session["captcha"] = number.ToString();
         }
     }
 }
