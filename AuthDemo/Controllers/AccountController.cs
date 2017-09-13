@@ -69,6 +69,8 @@ namespace AuthDemo.Controllers
         [RegisterUser]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
+            await DelayLoginAttempt();
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -76,6 +78,8 @@ namespace AuthDemo.Controllers
 
             if (GetCaptchaText() != model.Captcha)
             {
+                IncrementLoginAttempt();
+
                 ModelState.AddModelError("Captcha", "Captcha is not correct."); 
                 return View(model); 
             }
@@ -92,11 +96,35 @@ namespace AuthDemo.Controllers
                     return View("Lockout");
                 case SignInStatus.RequiresVerification:
                     return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, model.RememberMe });
-                case SignInStatus.Failure:
                 default:
+                    IncrementLoginAttempt();
                     ModelState.AddModelError("", "Invalid login attempt.");
                     return View(model);
             }
+        }
+
+        private async Task DelayLoginAttempt()
+        {
+            if (HttpContext.Application[Request.UserHostAddress] != null)
+            {
+                var incrementalDelay = (int) HttpContext.Application[Request.UserHostAddress];
+                await Task.Delay(incrementalDelay * 1000);
+            }
+        }
+
+        private void IncrementLoginAttempt()
+        {
+            int incrementalDelay;
+            if (HttpContext.Application[Request.UserHostAddress] == null)
+            {
+                incrementalDelay = 1;
+            }
+            else
+            {
+                incrementalDelay = (int) HttpContext.Application[Request.UserHostAddress] * 2;
+            }
+
+            HttpContext.Application[Request.UserHostAddress] = incrementalDelay;
         }
 
         //
@@ -135,7 +163,6 @@ namespace AuthDemo.Controllers
                     return RedirectToLocal(model.ReturnUrl);
                 case SignInStatus.LockedOut:
                     return View("Lockout");
-                case SignInStatus.Failure:
                 default:
                     ModelState.AddModelError("", "Invalid code.");
                     return View(model);
@@ -320,7 +347,8 @@ namespace AuthDemo.Controllers
             {
                 return View("Error");
             }
-            return RedirectToAction("VerifyCode", new { Provider = model.SelectedProvider, ReturnUrl = model.ReturnUrl, RememberMe = model.RememberMe });
+
+            return RedirectToAction("VerifyCode", new { Provider = model.SelectedProvider, model.ReturnUrl, model.RememberMe });
         }
 
         //
