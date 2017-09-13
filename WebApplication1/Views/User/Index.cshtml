@@ -15,7 +15,7 @@
     }
 </div>
 
-@if (ViewBag.IsAdmin && Model != null && Model.Any())
+@if (ViewBag.IsAdmin != null && ViewBag.IsAdmin && Model != null && Model.Any())
 {
     <h4>Users:</h4>
 
@@ -25,7 +25,7 @@
         {
             <tr>
                 <td>@user.UserName</td>
-                <td>@Html.ActionLink("Revoke", "Revoke", null, new {@class = "btn btn-info"})</td>
+                <td>@Html.ActionLink("Revoke", "Revoke", new { user.Id }, new {@class = "btn btn-info"})</td>
             </tr>
         }
 

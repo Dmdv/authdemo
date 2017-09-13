@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using AuthDemo;
+using AuthDemo.Models;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin;
 using Owin;
 using System.Linq;
-using AuthDemo.Models;
-using AuthDemo;
 
 [assembly: OwinStartup(typeof(Startup))]
 
@@ -52,7 +52,8 @@ namespace AuthDemo
         {
             var user = new ApplicationUser
             {
-                UserName = userConfig.Name
+                UserName = userConfig.Name,
+                Email = "somemail" + userConfig.Name + "@yandex.ru"
             };
 
             var chkUser = userManager.Create(user, userConfig.Password);

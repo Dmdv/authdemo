@@ -30,7 +30,7 @@ namespace AuthDemo
                     // This is a security feature which is used when you change a password or add an external login to your account.  
                     OnValidateIdentity = SecurityStampValidator
                         .OnValidateIdentity<ApplicationUserManager, ApplicationUser>(
-                            validateInterval: TimeSpan.FromSeconds(30),
+                            validateInterval: TimeSpan.FromSeconds(10),
                             regenerateIdentity: (manager, user) => user.GenerateUserIdentityAsync(manager))
                 }
             });

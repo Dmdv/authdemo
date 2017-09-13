@@ -10,6 +10,12 @@ namespace AuthDemo.Cache
     {
         private const string CacheKey = "loggedinusers";
 
+        public static void Remove(string id)
+        {
+            var users = GetLoggedInUsers();
+            users.Remove(id);
+        }
+
         public static void Remove(IPrincipal user)
         {
             var users = GetLoggedInUsers();

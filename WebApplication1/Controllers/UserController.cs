@@ -2,13 +2,34 @@
 using AuthDemo.Models;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNet.Identity.Owin;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 
 namespace AuthDemo.Controllers
 {
     public class UserController : Controller
     {
+        private ApplicationUserManager _userManager;
+
+        public UserController()
+        {
+        }
+
+        public UserController(ApplicationUserManager userManager)
+        {
+            UserManager = userManager;
+        }
+
+        public ApplicationUserManager UserManager
+        {
+            get { return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>(); }
+            private set { _userManager = value; }
+        }
+
+
         public bool IsAdminUser()
         {
             if (User.Identity.IsAuthenticated)
@@ -27,7 +48,6 @@ namespace AuthDemo.Controllers
 
 
         // GET: User
-        //[Authorize(Roles = "Admin")]
         public ActionResult Index()
         {
             if (User.Identity.IsAuthenticated)
@@ -45,13 +65,20 @@ namespace AuthDemo.Controllers
                 return View(SessionCache.GetLoggedInUsers().Select(x => x.Value));
             }
 
+            ViewBag.IsAdmin = false;
             ViewBag.Name = "Not LoggedIn";
 
             return View();
         }
 
-        public ActionResult Revoke()
+        public async Task<ActionResult> Revoke(string id)
         {
+            var identityResult = await UserManager.UpdateSecurityStampAsync(id);
+            if (identityResult.Succeeded)
+            {
+                SessionCache.Remove(id);
+            }
+
             return RedirectToAction("Index");
         }
     }

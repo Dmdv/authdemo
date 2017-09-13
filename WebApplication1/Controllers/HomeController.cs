@@ -10,7 +10,6 @@ namespace AuthDemo.Controllers
 
         public HomeController()
         {
-            
         }
 
         public HomeController(ApplicationUserManager userManager)
