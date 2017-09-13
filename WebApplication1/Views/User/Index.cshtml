@@ -1,7 +1,41 @@
-﻿@model dynamic
+﻿@model IEnumerable<AuthDemo.Models.ApplicationUser>
 
 @{
     ViewBag.Title = ViewBag.Name;
 }
 
-<h2>Welcome <strong>@ViewBag.Name</strong> !</h2>
+<div class="page-header">
+    <h2>
+        Welcome <strong>@ViewBag.Name</strong> !
+    </h2>
+
+    @if (ViewBag.IsAdmin)
+    {
+        <small>Revoke currently logged in users</small>
+    }
+</div>
+
+@if (ViewBag.IsAdmin && Model != null && Model.Any())
+{
+    <h4>Users:</h4>
+
+    <table class="table">
+
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@Html.ActionLink("Revoke", "Revoke", null, new {@class = "btn btn-info"})</td>
+            </tr>
+        }
+
+    </table>
+}
+else if(ViewBag.IsAdmin)
+{
+    <h4>No user is logged in</h4>
+}
+else
+{
+    <strong>You need Admin rights to see this panel</strong>
+}

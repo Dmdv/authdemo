@@ -1,6 +1,8 @@
-﻿using AuthDemo.Models;
+﻿using AuthDemo.Cache;
+using AuthDemo.Models;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using System.Linq;
 using System.Web.Mvc;
 
 namespace AuthDemo.Controllers
@@ -33,19 +35,24 @@ namespace AuthDemo.Controllers
                 var user = User.Identity;
 
                 ViewBag.Name = user.Name;
-                ViewBag.IsAdmin = "No";
+                ViewBag.IsAdmin = false;
 
                 if (IsAdminUser())
                 {
-                    ViewBag.IsAdmin = "Yes";
+                    ViewBag.IsAdmin = true;
                 }
 
-                return View();
+                return View(SessionCache.GetLoggedInUsers().Select(x => x.Value));
             }
 
             ViewBag.Name = "Not LoggedIn";
 
             return View();
+        }
+
+        public ActionResult Revoke()
+        {
+            return RedirectToAction("Index");
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using AuthDemo.Models;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Owin;
 using System;
-using AuthDemo.Models;
 
 namespace AuthDemo
 {
@@ -30,7 +30,7 @@ namespace AuthDemo
                     // This is a security feature which is used when you change a password or add an external login to your account.  
                     OnValidateIdentity = SecurityStampValidator
                         .OnValidateIdentity<ApplicationUserManager, ApplicationUser>(
-                            validateInterval: TimeSpan.FromMinutes(30),
+                            validateInterval: TimeSpan.FromSeconds(30),
                             regenerateIdentity: (manager, user) => user.GenerateUserIdentityAsync(manager))
                 }
             });

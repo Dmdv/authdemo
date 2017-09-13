@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNet.Identity.Owin;
 using System.Web;
 using System.Web.Mvc;
 
@@ -8,10 +6,35 @@ namespace AuthDemo.Controllers
 {
     public class HomeController : Controller
     {
+        private ApplicationUserManager _userManager;
+
+        public HomeController()
+        {
+            
+        }
+
+        public HomeController(ApplicationUserManager userManager)
+        {
+            UserManager = userManager;
+        }
+
         public ActionResult Index()
         {
             return View();
         }
+
+        public ApplicationUserManager UserManager
+        {
+            get
+            {
+                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            }
+            private set
+            {
+                _userManager = value;
+            }
+        }
+
 
         public ActionResult About()
         {

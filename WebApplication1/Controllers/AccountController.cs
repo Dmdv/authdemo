@@ -1,4 +1,6 @@
-﻿using AuthDemo.Models;
+﻿using AuthDemo.Cache;
+using AuthDemo.Filters;
+using AuthDemo.Models;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
@@ -14,6 +16,7 @@ namespace AuthDemo.Controllers
     {
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
+        public ApplicationUser LoggedUser { get; private set; }
 
         public AccountController()
         {
@@ -49,8 +52,6 @@ namespace AuthDemo.Controllers
             }
         }
 
-        //
-        // GET: /Account/Login
         [AllowAnonymous]
         public ActionResult Login(string returnUrl)
         {
@@ -63,6 +64,7 @@ namespace AuthDemo.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
+        [RegisterUser]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
             if (!ModelState.IsValid)
@@ -70,10 +72,13 @@ namespace AuthDemo.Controllers
                 return View(model);
             }
 
+            LoggedUser = null;
+
             var result = await SignInManager.PasswordSignInAsync(model.Name, model.Password, model.RememberMe, shouldLockout: true);
             switch (result)
             {
                 case SignInStatus.Success:
+                    LoggedUser = UserManager.FindByName(model.Name);
                     return RedirectToLocal(returnUrl);
                 case SignInStatus.LockedOut:
                     return View("Lockout");
@@ -386,6 +391,7 @@ namespace AuthDemo.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
+            SessionCache.Remove(User);
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
             return RedirectToAction("Index", "Home");
         }
@@ -418,34 +424,8 @@ namespace AuthDemo.Controllers
             base.Dispose(disposing);
         }
 
-        #region Helpers
         // Used for XSRF protection when adding external logins
         private const string XsrfKey = "XsrfId";
-
-        private IAuthenticationManager AuthenticationManager
-        {
-            get
-            {
-                return HttpContext.GetOwinContext().Authentication;
-            }
-        }
-
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
-        }
-
-        private ActionResult RedirectToLocal(string returnUrl)
-        {
-            if (Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-            return RedirectToAction("Index", "User");
-        }
 
         internal class ChallengeResult : HttpUnauthorizedResult
         {
@@ -475,6 +455,30 @@ namespace AuthDemo.Controllers
                 context.HttpContext.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
             }
         }
-        #endregion
+
+        private IAuthenticationManager AuthenticationManager
+        {
+            get
+            {
+                return HttpContext.GetOwinContext().Authentication;
+            }
+        }
+
+        private void AddErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error);
+            }
+        }
+
+        private ActionResult RedirectToLocal(string returnUrl)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction("Index", "User");
+        }
     }
 }
