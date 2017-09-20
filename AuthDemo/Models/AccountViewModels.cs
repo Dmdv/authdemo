@@ -68,7 +68,11 @@ namespace AuthDemo.Models
 
         [Required]
         [Display(Name = "Captcha")]
-        public string Captcha { get; set; } 
+        public string Captcha { get; set; }
+
+        [Required]
+        [Display(Name = "Cypher")]
+        public string Text { get; set; }
     }
 
     public class RegisterViewModel

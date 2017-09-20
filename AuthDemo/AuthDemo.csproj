@@ -216,6 +216,8 @@
     <Compile Include="Models\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Security\Captcha.cs" />
+    <Compile Include="Security\Cypher.cs" />
+    <Compile Include="Security\IKeyProvider.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="UsersConfig.cs" />
   </ItemGroup>

@@ -1,15 +1,16 @@
-﻿using System;
-using AuthDemo.Cache;
+﻿using AuthDemo.Cache;
 using AuthDemo.Filters;
 using AuthDemo.Models;
+using AuthDemo.Security;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
+using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using AuthDemo.Security;
 
 namespace AuthDemo.Controllers
 {
@@ -85,6 +86,22 @@ namespace AuthDemo.Controllers
             }
 
             LoggedUser = null;
+
+            // Demo text cypher
+
+            var bytes = Encoding.UTF8.GetBytes(model.Text);
+
+            var cypher = new Cypher();
+            var cyphered = cypher.Encrypt(bytes);
+            var decrypted = cypher.Decrypt(cyphered);
+
+            var strDecrypted = Encoding.UTF8.GetString(decrypted);
+
+            if (model.Text != strDecrypted)
+            {
+                ModelState.AddModelError("Text", "Cyphering is not correct.");
+                return View(model);
+            }
 
             var result = await SignInManager.PasswordSignInAsync(model.Name, model.Password, model.RememberMe, true);
             switch (result)
