@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -13,11 +12,12 @@ namespace AuthDemo.Security
         private byte[] _easKey;
         private byte[] _aesIv;
 
+        private const int KeySize = 2048;
         private const int IterationCount = 1000;
 
         public Cypher()
         {
-            using (var rsa = new RSACryptoServiceProvider(2048))
+            using (var rsa = new RSACryptoServiceProvider(KeySize))
             {
                 _publicKey = rsa.ExportParameters(false);
                 _privateKey = rsa.ExportParameters(true);
@@ -48,6 +48,8 @@ namespace AuthDemo.Security
                 aes.Key = keyBytes;
                 aes.IV = ivBytes;
 
+                EncyptAesKey(keyBytes, ivBytes);
+
                 using (var stream = new MemoryStream())
                 {
                     using (aes)
@@ -65,8 +67,6 @@ namespace AuthDemo.Security
                         rfc.Reset();
                     }
 
-                    EncyptAesKey(keyBytes, ivBytes);
-
                     return stream.ToArray();
                 }
             }
@@ -74,16 +74,10 @@ namespace AuthDemo.Security
 
         public byte[] Decrypt(byte[] cypherText)
         {
-            byte[] aesKey;
-            byte[] aesIv;
+            var keys = DecryptAesKeys();
 
-            using (var rsa = new RSACryptoServiceProvider(2048))
-            {
-                rsa.ImportParameters(_privateKey);
-
-                aesKey = rsa.Decrypt(_easKey, true);
-                aesIv = rsa.Decrypt(_aesIv, true);
-            }
+            var aesKey = keys.Item1;
+            var aesIv = keys.Item2;
 
             var aes = new AesManaged
             {
@@ -113,21 +107,30 @@ namespace AuthDemo.Security
             }
         }
 
+        private Tuple<byte[], byte[]> DecryptAesKeys()
+        {
+            byte[] aesKey;
+            byte[] aesIv;
+
+            using (var rsa = new RSACryptoServiceProvider(KeySize))
+            {
+                rsa.ImportParameters(_privateKey);
+
+                aesKey = rsa.Decrypt(_easKey, true);
+                aesIv = rsa.Decrypt(_aesIv, true);
+            }
+
+            return new Tuple<byte[], byte[]>(aesKey, aesIv);
+        }
+
         private  void EncyptAesKey(byte[] keyBytes, byte[] ivBytes)
         {
-            try
+            using (var rsa = new RSACryptoServiceProvider(KeySize))
             {
-                using (var rsa = new RSACryptoServiceProvider(2048))
-                {
-                    rsa.ImportParameters(_publicKey);
+                rsa.ImportParameters(_publicKey);
 
-                    _easKey = rsa.Encrypt(keyBytes, true);
-                    _aesIv = rsa.Encrypt(ivBytes, true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex);
+                _easKey = rsa.Encrypt(keyBytes, true);
+                _aesIv = rsa.Encrypt(ivBytes, true);
             }
         }
 
