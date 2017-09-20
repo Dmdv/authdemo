@@ -17,10 +17,11 @@ namespace AuthDemo.Security
 
         public Cypher()
         {
-            var rsa = new RSACryptoServiceProvider(2048);
-
-            _publicKey = rsa.ExportParameters(false);
-            _privateKey = rsa.ExportParameters(true);
+            using (var rsa = new RSACryptoServiceProvider(2048))
+            {
+                _publicKey = rsa.ExportParameters(false);
+                _privateKey = rsa.ExportParameters(true);
+            }
         }
 
         /// <summary>
@@ -73,11 +74,16 @@ namespace AuthDemo.Security
 
         public byte[] Decrypt(byte[] cypherText)
         {
-            var rsa = new RSACryptoServiceProvider(2048);
-            rsa.ImportParameters(_privateKey);
+            byte[] aesKey;
+            byte[] aesIv;
 
-            var aesKey = rsa.Decrypt(_easKey, true);
-            var aesIv = rsa.Decrypt(_aesIv, true);
+            using (var rsa = new RSACryptoServiceProvider(2048))
+            {
+                rsa.ImportParameters(_privateKey);
+
+                aesKey = rsa.Decrypt(_easKey, true);
+                aesIv = rsa.Decrypt(_aesIv, true);
+            }
 
             var aes = new AesManaged
             {
@@ -111,11 +117,13 @@ namespace AuthDemo.Security
         {
             try
             {
-                var rsa = new RSACryptoServiceProvider(2048);
-                rsa.ImportParameters(_publicKey);
+                using (var rsa = new RSACryptoServiceProvider(2048))
+                {
+                    rsa.ImportParameters(_publicKey);
 
-                _easKey = rsa.Encrypt(keyBytes, true);
-                _aesIv = rsa.Encrypt(ivBytes, true);
+                    _easKey = rsa.Encrypt(keyBytes, true);
+                    _aesIv = rsa.Encrypt(ivBytes, true);
+                }
             }
             catch (Exception ex)
             {
