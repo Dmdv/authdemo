@@ -9,8 +9,8 @@ namespace AuthDemo.Security
         private readonly RSAParameters _publicKey;
         private readonly RSAParameters _privateKey;
 
-        private byte[] _easKey;
-        private byte[] _aesIv;
+        private byte[] _aesCyphroKey;
+        private byte[] _aesCyphroIv;
 
         private const int KeySize = 2048;
         private const int IterationCount = 1000;
@@ -33,42 +33,42 @@ namespace AuthDemo.Security
             var salt = Generate256BitsOfRandomEntropy();
             var generatedKey = Generate256BitsOfRandomEntropy();
 
+            var aes = new AesManaged
+            {
+                KeySize = 256,
+                BlockSize = 128,
+                Mode = CipherMode.CBC
+            };
+
             using (var rfc = new Rfc2898DeriveBytes(generatedKey, salt, IterationCount))
             {
-                var aes = new AesManaged
-                {
-                    KeySize = 256,
-                    BlockSize = 128,
-                    Mode = CipherMode.CBC
-                };
-
                 var keyBytes = rfc.GetBytes(aes.KeySize / 8);
                 var ivBytes = rfc.GetBytes(aes.BlockSize / 8);
 
                 aes.Key = keyBytes;
                 aes.IV = ivBytes;
 
+                rfc.Reset();
+
                 EncyptAesKey(keyBytes, ivBytes);
+            }
 
-                using (var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
+            {
+                using (aes)
                 {
-                    using (aes)
+                    using (var cryptoStream = new CryptoStream(
+                        stream,
+                        aes.CreateEncryptor(),
+                        CryptoStreamMode.Write))
                     {
-                        using (var cryptoStream = new CryptoStream(
-                            stream,
-                            aes.CreateEncryptor(),
-                            CryptoStreamMode.Write))
-                        {
-                            cryptoStream.Write(value, 0, value.Length);
-                            cryptoStream.FlushFinalBlock();
-                            cryptoStream.Close();
-                        }
-
-                        rfc.Reset();
+                        cryptoStream.Write(value, 0, value.Length);
+                        cryptoStream.FlushFinalBlock();
+                        cryptoStream.Close();
                     }
-
-                    return stream.ToArray();
                 }
+
+                return stream.ToArray();
             }
         }
 
@@ -116,8 +116,8 @@ namespace AuthDemo.Security
             {
                 rsa.ImportParameters(_privateKey);
 
-                aesKey = rsa.Decrypt(_easKey, true);
-                aesIv = rsa.Decrypt(_aesIv, true);
+                aesKey = rsa.Decrypt(_aesCyphroKey, true);
+                aesIv = rsa.Decrypt(_aesCyphroIv, true);
             }
 
             return new Tuple<byte[], byte[]>(aesKey, aesIv);
@@ -129,8 +129,8 @@ namespace AuthDemo.Security
             {
                 rsa.ImportParameters(_publicKey);
 
-                _easKey = rsa.Encrypt(keyBytes, true);
-                _aesIv = rsa.Encrypt(ivBytes, true);
+                _aesCyphroKey = rsa.Encrypt(keyBytes, true);
+                _aesCyphroIv = rsa.Encrypt(ivBytes, true);
             }
         }
 
